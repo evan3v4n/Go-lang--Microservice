@@ -1,0 +1,36 @@
+# Path: project_root/docker-compose.yml
+
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/taskdb?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+    restart: always
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=taskdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:6
+    volumes:
+      - redis_data:/data
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:

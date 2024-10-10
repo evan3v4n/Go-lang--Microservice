@@ -1,22 +1,33 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"os/signal"
-
-	"github.com/evan3v4n/Go-lang--Microservice/application"
+	"log"
+	"Go_lang_Microservice/api/routes"
+	"Go_lang_Microservice/config"
+	"Go_lang_Microservice/db"
 )
 
 func main() {
-	app := application.New(application.LoadConfig())
+	if err := config.Load(); err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+	
+	if err := db.InitPostgres(); err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	
+	if err := db.InitRedis(); err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
+	r := routes.SetupRouter()
 
-	err := app.Start(ctx)
-	if err != nil {
-		fmt.Println("failed to start app:", err)
+	port := config.Get("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Starting server on port %s", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }
